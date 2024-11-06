@@ -21,12 +21,21 @@
             border-color: #333;
             background-color: #f0f0f0;
         }
+
+        #image-display img {
+            max-width: 200px;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
     <h2>Drag and Drop File Upload</h2>
     <div id="drop-zone">Drop files here</div>
     <div id="message"></div>
+
+    <h2>Uploaded Images:</h2>
+    <div id="image-display"></div>
+
 
     <script>
         const dropZone = document.getElementById("drop-zone");
@@ -63,13 +72,38 @@
                 method: "POST",
                 body: formData,
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                message.textContent = data;
+                message.textContent = data.message;
+                if(data.filename){
+                    displayImage(data.filename); // Display image immediately after upload
+                }else {
+                    console.error("No file returned from server")
+                }
+                
             })
             .catch(error => {
                 message.textContent = "Failed to upload file.";
             });
+        }
+
+       
+        // Display uploaded image
+        function displayImage(filename) {
+            console.log(filename)
+            fetch(`/files/${filename}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not OK");
+                    return response.blob();
+                })
+                .then(blob => {
+                    const imgUrl = URL.createObjectURL(blob);
+                    const imgElement = document.createElement("img");
+                    imgElement.src = imgUrl;
+                    imgElement.alt = filename;
+                    document.getElementById("image-display").appendChild(imgElement);
+                })
+                .catch((error) => console.error("Error displaying image:", error));
         }
     </script>
 </body>

@@ -43,15 +43,36 @@ const upload = multer({ storage });
 app.post("/upload", upload.single("file"), async (req, res) => {
     try {
         const { originalname, buffer } = req.file;
-        await File.create({
+        const file = await File.create({
             filename: originalname,
             data: buffer,
         });
 
-        res.status(200).send("File uploaded and saved to database successfully!");
+        // Send JSON response with the filename
+        res.status(200).json({ message: "File uploaded and saved to database successfully!", filename: file.filename });
     } catch (error) {
         console.error("Error uploading file:", error);
         res.status(500).send("Error uploading file.");
+    }
+});
+
+// Route to retrieve and display image by filename
+app.get("/files/:filename", async (req, res) => {
+    //console.log(req.params.filename)
+    try {
+        const file = await File.findOne({ where: { filename: req.params.filename } });
+
+        if (!file) {
+            return res.status(404).send("File not found");
+        }
+
+        // Set the response content type to display the image
+        const mimeType = file.filename.endsWith(".png") ? "image/png" : "image/jpeg";
+        res.setHeader("Content-Type", mimeType);
+        res.send(file.data);
+    } catch (error) {
+        console.error("Error retrieving file:", error);
+        res.status(500).send("Error retrieving file.");
     }
 });
 
